@@ -38,6 +38,7 @@ import org.checkerframework.framework.qual.DefaultQualifier;
 import org.jline.reader.ParsedLine;
 import org.jline.reader.Parser;
 import org.jline.reader.SyntaxError;
+import org.jline.reader.impl.DefaultParser;
 
 @DefaultQualifier(NonNull.class)
 public record MinecraftConsoleParser(DedicatedServer server) implements Parser {
@@ -90,9 +91,6 @@ public record MinecraftConsoleParser(DedicatedServer server) implements Parser {
       wordIdx = currentWordIdx;
       inWordCursor = 0;
     }
-    return new BrigadierParsedLine(words.get(wordIdx), inWordCursor, wordIdx, words, line, cursor);
-  }
-
-  record BrigadierParsedLine(String word, int wordCursor, int wordIndex, List<String> words, String line, int cursor) implements ParsedLine {
+    return new DefaultParser().new ArgumentList(line, words, wordIdx, inWordCursor, cursor);
   }
 }

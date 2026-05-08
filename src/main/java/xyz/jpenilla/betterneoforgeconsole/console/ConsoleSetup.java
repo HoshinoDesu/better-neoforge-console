@@ -24,6 +24,8 @@
 package xyz.jpenilla.betterneoforgeconsole.console;
 
 import java.nio.file.Paths;
+import net.minecrell.terminalconsole.TerminalConsoleAppender;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -51,6 +53,7 @@ public final class ConsoleSetup {
 
     return LineReaderBuilder.builder()
       .appName("Dedicated Server")
+      .terminal(TerminalConsoleAppender.getTerminal())
       .variable(LineReader.HISTORY_FILE, Paths.get(".console_history"))
       .completer(completer)
       .highlighter(highlighter)
@@ -72,6 +75,8 @@ public final class ConsoleSetup {
       delegatingParser
     );
 
+    TerminalConsoleAppender.setReader(lineReader);
+
     final ConsoleAppender consoleAppender = new ConsoleAppender(
       lineReader,
       config.logPattern(),
@@ -83,9 +88,10 @@ public final class ConsoleSetup {
     final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
     final LoggerConfig loggerConfig = loggerContext.getConfiguration().getLoggerConfig(logger.getName());
 
-    // replace SysOut appender with ConsoleAppender
     loggerConfig.removeAppender("SysOut");
-    loggerConfig.addAppender(consoleAppender, loggerConfig.getLevel(), null);
+    loggerConfig.removeAppender("Console");
+    loggerConfig.removeAppender("TerminalConsole");
+    loggerConfig.addAppender(consoleAppender, Level.INFO, null);
     loggerContext.updateLoggers();
 
     return new ConsoleState(lineReader, delegatingCompleter, delegatingHighlighter, delegatingParser);

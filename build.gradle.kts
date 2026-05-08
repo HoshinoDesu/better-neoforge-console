@@ -39,18 +39,10 @@ dependencies {
   annotationProcessor("org.apache.logging.log4j", "log4j-core", "2.24.1")
 
   val jlineVersion = "3.27.0"
-  implementation("org.jline", "jline", jlineVersion)
-  implementation("org.jline", "jline-terminal-jansi", jlineVersion)
-  add("additionalRuntimeClasspath", "org.jline:jline:$jlineVersion")
-  add("additionalRuntimeClasspath", "org.jline:jline-terminal-jansi:$jlineVersion")
-  jarJar("org.jline:jline:$jlineVersion")
-  jarJar("org.jline:jline-terminal-jansi:$jlineVersion")
-  jarJar("org.jline:jline-terminal:$jlineVersion")
-  jarJar("org.jline:jline-native:$jlineVersion")
+  compileOnly("org.jline", "jline-reader", jlineVersion)
+  compileOnly("org.jline", "jline-terminal-jansi", jlineVersion)
 
-  implementation("org.fusesource.jansi", "jansi", "2.4.1")
-  add("additionalRuntimeClasspath", "org.fusesource.jansi:jansi:2.4.1")
-  jarJar("org.fusesource.jansi:jansi:2.4.1")
+  compileOnly("org.fusesource.jansi", "jansi", "2.4.1")
 
   val adventureVersion = "4.17.0"
   implementation("net.kyori", "adventure-api", adventureVersion)
