@@ -14,6 +14,6 @@ jobs:
     secrets: inherit
     with:
       modrinth-publish: true
-      artifacts-path: 'build/libs/better-fabric-console-mc*.jar'
-      loom: true
+      artifacts-path: 'build/libs/better-neoforge-console-mc*.jar'
+      loom: false
       jdk-version: 21

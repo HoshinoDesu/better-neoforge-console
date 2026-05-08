@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+issueTrackerURL = "${githubUrl}/issues"
+
+[[mods]]
+modId = "${modId}"
+version = "${version}"
+displayName = "${name}"
+displayURL = "${githubUrl}"
+logoFile = "assets/better_neoforge_console/icon.png"
+authors = "jmp"
+description = '''${description}'''
+
+[[dependencies.${modId}]]
+modId = "neoforge"
+type = "required"
+versionRange = "${neoForgeVersionRange}"
+ordering = "NONE"
+side = "SERVER"
+
+[[dependencies.${modId}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraftVersionRange}"
+ordering = "NONE"
+side = "SERVER"
+
+[[mixins]]
+config = "better-neoforge-console.mixins.json"

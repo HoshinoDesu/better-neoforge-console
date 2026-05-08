@@ -1,7 +1,7 @@
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
-    maven("https://maven.fabricmc.net/")
+    maven("https://maven.neoforged.net/releases")
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
       mavenContent { snapshotsOnly() }
     }
@@ -9,20 +9,19 @@ dependencyResolutionManagement {
       mavenContent { snapshotsOnly() }
     }
   }
-  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
 }
 
 pluginManagement {
   repositories {
     gradlePluginPortal()
-    maven("https://maven.fabricmc.net/")
+    maven("https://maven.neoforged.net/releases")
     maven("https://repo.jpenilla.xyz/snapshots/")
   }
 }
 
 plugins {
-  id("quiet-fabric-loom") version "1.7-SNAPSHOT"
   id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
-rootProject.name = "better-fabric-console"
+rootProject.name = "better-neoforge-console"

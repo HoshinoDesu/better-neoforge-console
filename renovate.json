@@ -4,17 +4,9 @@
     "config:recommended"
   ],
   "ignoreDeps": [
-    "quiet-fabric-loom",
     "com.mojang:minecraft"
   ],
   "labels": [
     "dependencies"
-  ],
-  "packageRules": [
-    {
-      "description": "Correct Fabric API version handling",
-      "matchPackageNames": ["net.fabricmc.fabric-api:fabric-api", "net.fabricmc.fabric-api:fabric-api-deprecated"],
-      "versioning": "regex:^(?<major>\\d+)(\\.(?<minor>\\d+))?(\\.(?<patch>\\d+))?(?:\\+(?<compatibility>.*))?$"
-    }
   ]
 }

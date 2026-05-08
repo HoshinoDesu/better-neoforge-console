@@ -1,4 +1,4 @@
-This file is part of Better Fabric Console, licensed under the MIT License.
+This file is part of Better NeoForge Console, licensed under the MIT License.
 
 Copyright (c) 2021-2024 Jason Penilla
 
