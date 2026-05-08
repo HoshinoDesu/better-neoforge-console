@@ -55,7 +55,7 @@ abstract class ServerGamePacketListenerImplMixin implements ServerPlayerConnecti
   @Unique
   private void logCommand(final String command) {
     if (BetterNeoForgeConsole.instance().config().logPlayerExecutedCommands()) {
-      BetterNeoForgeConsole.LOGGER.info("{} issued server command: /{}", this.getPlayer().getGameProfile().getName(), command);
+      BetterNeoForgeConsole.LOGGER.info("{} issued server command: /{}", this.getPlayer().getName().getString(), command);
     }
   }
 }

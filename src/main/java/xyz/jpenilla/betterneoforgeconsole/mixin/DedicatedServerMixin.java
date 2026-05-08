@@ -23,16 +23,8 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.mixin;
 
-import com.mojang.datafixers.DataFixer;
-import java.net.Proxy;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.Services;
-import net.minecraft.server.WorldStem;
 import net.minecraft.server.dedicated.DedicatedServer;
-import net.minecraft.server.level.progress.ChunkProgressListenerFactory;
-import net.minecraft.server.packs.repository.PackRepository;
-import net.minecraft.world.level.storage.LevelStorageSource;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -40,14 +32,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(DedicatedServer.class)
-abstract class DedicatedServerMixin extends MinecraftServer {
+abstract class DedicatedServerMixin {
   @Final @Shadow static Logger LOGGER;
 
-  DedicatedServerMixin(final Thread thread, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final PackRepository packRepository, final WorldStem worldStem, final Proxy proxy, final DataFixer dataFixer, final Services services, final ChunkProgressListenerFactory chunkProgressListenerFactory) {
-    super(thread, levelStorageAccess, packRepository, worldStem, proxy, dataFixer, services, chunkProgressListenerFactory);
-  }
-
-  @Override
   public void sendSystemMessage(final @NonNull Component component) {
     LOGGER.info(component.getString());
   }

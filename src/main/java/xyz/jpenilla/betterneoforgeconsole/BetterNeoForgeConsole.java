@@ -123,7 +123,6 @@ public final class BetterNeoForgeConsole {
 
   private void registerCommands(final RegisterCommandsEvent event) {
     event.getDispatcher().register(literal("better-neoforge-console")
-      .requires(stack -> stack.hasPermission(stack.getServer().getOperatorUserPermissionLevel()))
       .executes(this::executeCommand));
   }
 
