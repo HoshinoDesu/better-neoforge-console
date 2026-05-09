@@ -31,12 +31,14 @@ import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.jline.reader.Completer;
 import org.jline.reader.Highlighter;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.Parser;
+import org.jline.terminal.Terminal;
 import xyz.jpenilla.betterneoforgeconsole.configuration.Config;
 
 @DefaultQualifier(NonNull.class)
@@ -45,15 +47,15 @@ public final class ConsoleSetup {
   }
 
   private static LineReader buildLineReader(
+    final @Nullable Terminal terminal,
     final Completer completer,
     final Highlighter highlighter,
     final Parser parser
   ) {
     System.setProperty("org.jline.reader.support.parsedline", "true"); // to hide a warning message about the parser not supporting
 
-    return LineReaderBuilder.builder()
+    final LineReaderBuilder builder = LineReaderBuilder.builder()
       .appName("Dedicated Server")
-      .terminal(TerminalConsoleAppender.getTerminal())
       .variable(LineReader.HISTORY_FILE, Paths.get(".console_history"))
       .completer(completer)
       .highlighter(highlighter)
@@ -61,21 +63,28 @@ public final class ConsoleSetup {
       .completionMatcher(new MinecraftCompletionMatcher())
       .option(LineReader.Option.INSERT_TAB, false)
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
-      .option(LineReader.Option.COMPLETE_IN_WORD, true)
-      .build();
+      .option(LineReader.Option.COMPLETE_IN_WORD, true);
+    if (terminal != null) {
+      builder.terminal(terminal);
+    }
+    return builder.build();
   }
 
   public static ConsoleState init(final Config config) {
     final DelegatingCompleter delegatingCompleter = new DelegatingCompleter();
     final DelegatingHighlighter delegatingHighlighter = new DelegatingHighlighter();
     final DelegatingParser delegatingParser = new DelegatingParser();
+    final @Nullable Terminal terminal = TerminalConsoleAppender.getTerminal();
     final LineReader lineReader = buildLineReader(
+      terminal,
       delegatingCompleter,
       delegatingHighlighter,
       delegatingParser
     );
 
-    TerminalConsoleAppender.setReader(lineReader);
+    if (terminal != null) {
+      TerminalConsoleAppender.setReader(lineReader);
+    }
 
     final ConsoleAppender consoleAppender = new ConsoleAppender(
       lineReader,
