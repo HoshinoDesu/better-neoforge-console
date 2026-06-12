@@ -23,6 +23,7 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.console;
 
+import java.io.IOException;
 import java.nio.file.Paths;
 import net.minecrell.terminalconsole.TerminalConsoleAppender;
 import org.apache.logging.log4j.Level;
@@ -39,6 +40,7 @@ import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.Parser;
 import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import xyz.jpenilla.betterneoforgeconsole.configuration.Config;
 
 @DefaultQualifier(NonNull.class)
@@ -66,6 +68,14 @@ public final class ConsoleSetup {
       .option(LineReader.Option.COMPLETE_IN_WORD, true);
     if (terminal != null) {
       builder.terminal(terminal);
+    } else {
+      // No JLine terminal from TerminalConsoleAppender; use an explicitly dumb
+      // terminal to avoid JLine printing a warning when it falls back on its own.
+      try {
+        builder.terminal(TerminalBuilder.builder().dumb(true).build());
+      } catch (final IOException ignore) {
+        // let LineReaderBuilder create its own fallback terminal
+      }
     }
     return builder.build();
   }

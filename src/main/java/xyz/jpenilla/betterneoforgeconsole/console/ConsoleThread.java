@@ -23,6 +23,11 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.console;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -31,6 +36,7 @@ import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.UserInterruptException;
 import xyz.jpenilla.betterneoforgeconsole.BetterNeoForgeConsole;
+import xyz.jpenilla.betterneoforgeconsole.util.TerminalModeDetection;
 
 @DefaultQualifier(NonNull.class)
 public final class ConsoleThread extends Thread {
@@ -52,14 +58,18 @@ public final class ConsoleThread extends Thread {
   @Override
   public void run() {
     BetterNeoForgeConsole.LOGGER.info("Initialized Better NeoForge Console console thread.");
-    this.acceptInput();
+    if (TerminalModeDetection.isDumb()) {
+      this.acceptInput(System.in);
+    } else {
+      this.acceptTerminalInput();
+    }
   }
 
   private static boolean isRunning(final MinecraftServer server) {
     return !server.isStopped() && server.isRunning();
   }
 
-  private void acceptInput() {
+  private void acceptTerminalInput() {
     while (isRunning(this.server)) {
       try {
         final String input = this.lineReader.readLine(TERMINAL_PROMPT).trim();
@@ -74,6 +84,24 @@ public final class ConsoleThread extends Thread {
         this.server.handleConsoleInput(STOP_COMMAND, this.server.createCommandSourceStack());
         break;
       }
+    }
+  }
+
+  private void acceptInput(final InputStream in) {
+    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+      String line;
+      while (isRunning(this.server) && (line = reader.readLine()) != null) {
+        final String input = line.trim();
+        if (input.isEmpty()) {
+          continue;
+        }
+        this.server.handleConsoleInput(input, this.server.createCommandSourceStack());
+        if (input.equals(STOP_COMMAND)) {
+          break;
+        }
+      }
+    } catch (final IOException e) {
+      throw new UncheckedIOException("Error reading console input", e);
     }
   }
 }
