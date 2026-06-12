@@ -39,6 +39,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.dedicated.DedicatedServer;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
@@ -63,7 +64,7 @@ import xyz.jpenilla.betterneoforgeconsole.console.MinecraftConsoleParser;
 
 import static net.minecraft.commands.Commands.literal;
 
-@Mod(BetterNeoForgeConsole.MOD_ID)
+@Mod(value = BetterNeoForgeConsole.MOD_ID, dist = Dist.DEDICATED_SERVER)
 @DefaultQualifier(NonNull.class)
 public final class BetterNeoForgeConsole {
   public static final String MOD_ID = "better_neoforge_console";
