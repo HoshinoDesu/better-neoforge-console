@@ -21,22 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package xyz.jpenilla.betterneoforgeconsole.mixin;
+package xyz.jpenilla.betterneoforgeconsole.util;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.dedicated.DedicatedServer;
+import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.server.MinecraftServer;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.slf4j.Logger;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import xyz.jpenilla.betterneoforgeconsole.util.ComponentAnsiSerializer;
+import org.checkerframework.framework.qual.DefaultQualifier;
 
-@Mixin(DedicatedServer.class)
-abstract class DedicatedServerMixin {
-  @Final @Shadow static Logger LOGGER;
+@DefaultQualifier(NonNull.class)
+public final class ComponentAnsiSerializer {
+  private ComponentAnsiSerializer() {
+  }
 
-  public void sendSystemMessage(final @NonNull Component component) {
-    LOGGER.info(ComponentAnsiSerializer.serialize((DedicatedServer) (Object) this, component));
+  public static String serialize(final MinecraftServer server, final Component component) {
+    try {
+      final JsonElement json = ComponentSerialization.CODEC
+        .encodeStart(server.registryAccess().createSerializationContext(JsonOps.INSTANCE), component)
+        .getOrThrow();
+      return ANSIComponentSerializer.ansi().serialize(GsonComponentSerializer.gson().deserializeFromTree(json));
+    } catch (final Exception ex) {
+      // fall back to vanilla behavior if conversion fails for any reason
+      return component.getString();
+    }
   }
 }

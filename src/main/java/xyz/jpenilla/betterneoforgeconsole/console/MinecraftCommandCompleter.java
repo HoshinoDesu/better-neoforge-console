@@ -42,6 +42,7 @@ import org.jline.reader.Candidate;
 import org.jline.reader.Completer;
 import org.jline.reader.LineReader;
 import org.jline.reader.ParsedLine;
+import xyz.jpenilla.betterneoforgeconsole.util.ComponentAnsiSerializer;
 import xyz.jpenilla.betterneoforgeconsole.util.Util;
 
 @DefaultQualifier(NonNull.class)
@@ -75,7 +76,7 @@ public record MinecraftCommandCompleter(MinecraftServer server) implements Compl
     final @Nullable String description = Optional.ofNullable(descriptionMessage)
       .map(tooltip -> {
         final Component tooltipComponent = ComponentUtils.fromMessage(tooltip);
-        return tooltipComponent.equals(Component.empty()) ? null : tooltipComponent.getString();
+        return tooltipComponent.equals(Component.empty()) ? null : ComponentAnsiSerializer.serialize(this.server, tooltipComponent);
       })
       .orElse(null);
     //noinspection SpellCheckingInspection
