@@ -5,6 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.ansi.ColorLevel;
+import net.minecrell.terminalconsole.TerminalConsoleAppender;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
@@ -117,7 +118,7 @@ public final class HexFormattingConverter extends LogEventPatternConverter {
             return;
         }
 
-        boolean useAnsi = ansi && ColorLevel.compute() != ColorLevel.NONE;
+        boolean useAnsi = ansi && TerminalConsoleAppender.isAnsiSupported() && ColorLevel.compute() != ColorLevel.NONE;
         String content = toAppendTo.substring(start);
         content = useAnsi ? convertRGBColors(content) : stripRGBColors(content);
         format(content, toAppendTo, start, useAnsi);

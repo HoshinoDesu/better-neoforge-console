@@ -21,13 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package xyz.jpenilla.betterneoforgeconsole.util;
+package xyz.jpenilla.betterneoforgeconsole.mixin;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServer;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import xyz.jpenilla.betterneoforgeconsole.util.ComponentAnsiSerializer;
 
-@DefaultQualifier(NonNull.class)
-public enum TerminalMode {
-  DUMB,
-  INTERACTIVE
+@Mixin(MinecraftServer.class)
+abstract class MinecraftServerMixin {
+  @WrapOperation(
+    method = "sendSystemMessage",
+    at = @At(value = "INVOKE", target = "Lnet/minecraft/network/chat/Component;getString()Ljava/lang/String;")
+  )
+  private String wrapMessage(final Component component, final Operation<String> original) {
+    if ((Object) this instanceof DedicatedServer) {
+      return ComponentAnsiSerializer.serialize(component);
+    }
+    return original.call(component);
+  }
 }

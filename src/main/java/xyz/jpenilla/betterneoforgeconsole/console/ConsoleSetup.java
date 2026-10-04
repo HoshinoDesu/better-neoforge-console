@@ -23,24 +23,21 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.console;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import net.minecrell.terminalconsole.TerminalConsoleAppender;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
-import org.jline.reader.Completer;
-import org.jline.reader.Highlighter;
+import org.jline.keymap.KeyMap;
+import org.jline.reader.Binding;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
-import org.jline.reader.Parser;
+import org.jline.reader.Macro;
 import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import xyz.jpenilla.betterneoforgeconsole.configuration.Config;
 
 @DefaultQualifier(NonNull.class)
@@ -48,16 +45,18 @@ public final class ConsoleSetup {
   private ConsoleSetup() {
   }
 
-  private static LineReader buildLineReader(
-    final @Nullable Terminal terminal,
-    final Completer completer,
-    final Highlighter highlighter,
-    final Parser parser
-  ) {
-    System.setProperty("org.jline.reader.support.parsedline", "true"); // to hide a warning message about the parser not supporting
+  public static ConsoleState init(final Config config) {
+    final DelegatingCompleter completer = new DelegatingCompleter();
+    final DelegatingHighlighter highlighter = new DelegatingHighlighter();
+    final DelegatingParser parser = new DelegatingParser();
+    final @Nullable Terminal terminal = TerminalConsoleAppender.getTerminal();
+    if (terminal == null) {
+      return new ConsoleState(null, completer, highlighter, parser);
+    }
 
-    final LineReaderBuilder builder = LineReaderBuilder.builder()
+    final LineReader lineReader = LineReaderBuilder.builder()
       .appName("Dedicated Server")
+      .terminal(terminal)
       .variable(LineReader.HISTORY_FILE, Paths.get(".console_history"))
       .completer(completer)
       .highlighter(highlighter)
@@ -65,54 +64,25 @@ public final class ConsoleSetup {
       .completionMatcher(new MinecraftCompletionMatcher())
       .option(LineReader.Option.INSERT_TAB, false)
       .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
-      .option(LineReader.Option.COMPLETE_IN_WORD, true);
-    if (terminal != null) {
-      builder.terminal(terminal);
-    } else {
-      // No JLine terminal from TerminalConsoleAppender; use an explicitly dumb
-      // terminal to avoid JLine printing a warning when it falls back on its own.
-      try {
-        builder.terminal(TerminalBuilder.builder().dumb(true).build());
-      } catch (final IOException ignore) {
-        // let LineReaderBuilder create its own fallback terminal
-      }
+      .option(LineReader.Option.COMPLETE_IN_WORD, true)
+      .build();
+
+    // Upstream c9d58f7: application keypad mode sends escape sequences for digits.
+    final KeyMap<Binding> keys = lineReader.getKeyMaps().get(LineReader.MAIN);
+    for (int i = 0; i < 10; i++) {
+      keys.bind(new Macro(Integer.toString(i)), "\033O" + (char) ('p' + i));
     }
-    return builder.build();
-  }
+    TerminalConsoleAppender.setReader(lineReader);
 
-  public static ConsoleState init(final Config config) {
-    final DelegatingCompleter delegatingCompleter = new DelegatingCompleter();
-    final DelegatingHighlighter delegatingHighlighter = new DelegatingHighlighter();
-    final DelegatingParser delegatingParser = new DelegatingParser();
-    final @Nullable Terminal terminal = TerminalConsoleAppender.getTerminal();
-    final LineReader lineReader = buildLineReader(
-      terminal,
-      delegatingCompleter,
-      delegatingHighlighter,
-      delegatingParser
-    );
-
-    if (terminal != null) {
-      TerminalConsoleAppender.setReader(lineReader);
-    }
-
-    final ConsoleAppender consoleAppender = new ConsoleAppender(
-      lineReader,
-      config.logPattern(),
-      null
-    );
-    consoleAppender.start();
-
-    final Logger logger = (Logger) LogManager.getRootLogger();
-    final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
-    final LoggerConfig loggerConfig = loggerContext.getConfiguration().getLoggerConfig(logger.getName());
-
-    loggerConfig.removeAppender("SysOut");
-    loggerConfig.removeAppender("Console");
-    loggerConfig.removeAppender("TerminalConsole");
-    loggerConfig.addAppender(consoleAppender, Level.INFO, null);
-    loggerContext.updateLoggers();
-
-    return new ConsoleState(lineReader, delegatingCompleter, delegatingHighlighter, delegatingParser);
+    final LoggerContext context = (LoggerContext) LogManager.getContext(false);
+    final LoggerConfig logger = context.getConfiguration().getRootLogger();
+    final ConsoleAppender appender = new ConsoleAppender(lineReader, config.logPattern());
+    appender.start();
+    logger.removeAppender("SysOut");
+    logger.removeAppender("Console");
+    logger.removeAppender("TerminalConsole");
+    logger.addAppender(appender, Level.INFO, null);
+    context.updateLoggers();
+    return new ConsoleState(lineReader, completer, highlighter, parser);
   }
 }

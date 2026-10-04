@@ -25,18 +25,19 @@ package xyz.jpenilla.betterneoforgeconsole.console;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.UserInterruptException;
+import org.jline.terminal.Terminal;
 import xyz.jpenilla.betterneoforgeconsole.BetterNeoForgeConsole;
-import xyz.jpenilla.betterneoforgeconsole.util.TerminalModeDetection;
 
 @DefaultQualifier(NonNull.class)
 public final class ConsoleThread extends Thread {
@@ -44,11 +45,11 @@ public final class ConsoleThread extends Thread {
   private static final String STOP_COMMAND = "stop";
 
   private final DedicatedServer server;
-  private final LineReader lineReader;
+  private final @Nullable LineReader lineReader;
 
   public ConsoleThread(
     final DedicatedServer server,
-    final LineReader lineReader
+    final @Nullable LineReader lineReader
   ) {
     super("Console thread");
     this.server = server;
@@ -58,10 +59,15 @@ public final class ConsoleThread extends Thread {
   @Override
   public void run() {
     BetterNeoForgeConsole.LOGGER.info("Initialized Better NeoForge Console console thread.");
-    if (TerminalModeDetection.isDumb()) {
-      this.acceptInput(System.in);
+    if (this.lineReader == null) {
+      this.acceptInput(new InputStreamReader(System.in, StandardCharsets.UTF_8));
     } else {
-      this.acceptTerminalInput();
+      final Terminal terminal = this.lineReader.getTerminal();
+      if (Terminal.TYPE_DUMB.equals(terminal.getType()) || Terminal.TYPE_DUMB_COLOR.equals(terminal.getType())) {
+        this.acceptInput(terminal.reader());
+      } else {
+        this.acceptTerminalInput();
+      }
     }
   }
 
@@ -87,8 +93,9 @@ public final class ConsoleThread extends Thread {
     }
   }
 
-  private void acceptInput(final InputStream in) {
-    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+  private void acceptInput(final Reader inputReader) {
+    final BufferedReader reader = new BufferedReader(inputReader);
+    try {
       String line;
       while (isRunning(this.server) && (line = reader.readLine()) != null) {
         final String input = line.trim();
@@ -101,7 +108,7 @@ public final class ConsoleThread extends Thread {
         }
       }
     } catch (final IOException e) {
-      throw new UncheckedIOException("Error reading console input", e);
+      BetterNeoForgeConsole.LOGGER.error("Error reading console input", e);
     }
   }
 }

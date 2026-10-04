@@ -23,10 +23,11 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.console;
 
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jline.reader.LineReader;
 
 public record ConsoleState(
-  LineReader lineReader,
+  @Nullable LineReader lineReader,
   DelegatingCompleter completer,
   DelegatingHighlighter highlighter,
   DelegatingParser parser

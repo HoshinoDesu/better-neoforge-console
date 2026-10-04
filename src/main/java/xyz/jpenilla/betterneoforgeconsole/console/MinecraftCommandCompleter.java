@@ -76,7 +76,7 @@ public record MinecraftCommandCompleter(MinecraftServer server) implements Compl
     final @Nullable String description = Optional.ofNullable(descriptionMessage)
       .map(tooltip -> {
         final Component tooltipComponent = ComponentUtils.fromMessage(tooltip);
-        return tooltipComponent.equals(Component.empty()) ? null : ComponentAnsiSerializer.serialize(this.server, tooltipComponent);
+        return tooltipComponent.equals(Component.empty()) ? null : ComponentAnsiSerializer.serialize(tooltipComponent);
       })
       .orElse(null);
     //noinspection SpellCheckingInspection

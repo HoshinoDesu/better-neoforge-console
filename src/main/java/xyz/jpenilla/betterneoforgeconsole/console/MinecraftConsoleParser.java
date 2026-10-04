@@ -25,26 +25,26 @@ package xyz.jpenilla.betterneoforgeconsole.console;
 
 import com.mojang.brigadier.ImmutableStringReader;
 import com.mojang.brigadier.ParseResults;
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.context.CommandContextBuilder;
 import com.mojang.brigadier.context.ParsedCommandNode;
 import com.mojang.brigadier.context.StringRange;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.server.dedicated.DedicatedServer;
+import net.minecraft.server.MinecraftServer;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jline.reader.CompletingParsedLine;
 import org.jline.reader.ParsedLine;
 import org.jline.reader.Parser;
 import org.jline.reader.SyntaxError;
-import org.jline.reader.impl.DefaultParser;
+import xyz.jpenilla.betterneoforgeconsole.util.Util;
 
 @DefaultQualifier(NonNull.class)
-public record MinecraftConsoleParser(DedicatedServer server) implements Parser {
+public record MinecraftConsoleParser(MinecraftServer server) implements Parser {
   @Override
   public ParsedLine parse(final String line, final int cursor, final ParseContext context) throws SyntaxError {
-    final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(new StringReader(line), this.server.createCommandSourceStack());
+    final ParseResults<CommandSourceStack> results = this.server.getCommands().getDispatcher().parse(Util.prepareStringReader(line), this.server.createCommandSourceStack());
     final ImmutableStringReader reader = results.getReader();
     final List<String> words = new ArrayList<>();
     CommandContextBuilder<CommandSourceStack> currentContext = results.getContext();
@@ -91,6 +91,23 @@ public record MinecraftConsoleParser(DedicatedServer server) implements Parser {
       wordIdx = currentWordIdx;
       inWordCursor = 0;
     }
-    return new DefaultParser().new ArgumentList(line, words, wordIdx, inWordCursor, cursor);
+    return new BrigadierParsedLine(words.get(wordIdx), inWordCursor, wordIdx, words, line, cursor);
+  }
+
+  record BrigadierParsedLine(String word, int wordCursor, int wordIndex, List<String> words, String line, int cursor) implements CompletingParsedLine {
+    @Override
+    public CharSequence escape(final CharSequence candidate, final boolean complete) {
+      return candidate;
+    }
+
+    @Override
+    public int rawWordCursor() {
+      return this.wordCursor;
+    }
+
+    @Override
+    public int rawWordLength() {
+      return this.word.length();
+    }
   }
 }

@@ -1,7 +1,37 @@
 # Better NeoForge Console
 
-Server-side NeoForge mod enhancing the console with tab completions, colored log output, command syntax highlighting, command history, and more.
+A server-side NeoForge port of [Better Fabric Console](https://github.com/jpenilla/better-fabric-console), with Brigadier command completion, syntax highlighting, colored output, persistent history, and optional logging of player commands.
 
-Better NeoForge Console is configurable through the `better_neoforge_console.conf` file generated in the config folder. Requires NeoForge for Minecraft 1.21.1 through 1.21.11.
+## Requirements
 
-This NeoForge port is based on Jason Penilla's original Better Fabric Console project: https://github.com/jpenilla/better-fabric-console
+- Minecraft 26.3
+- NeoForge 26.3.0.48-beta or a later 26.3 build
+- Java 25
+
+Each Minecraft generation has its own APIs. This artifact targets 26.3; use a matching older release for an older server.
+
+## Installation
+
+Put `better-neoforge-console-mc26.3-1.3.0.jar` in the server's `mods` folder and start the server with `--nogui`. Configuration is generated at `config/better_neoforge_console.conf`. Command history is saved to `.console_history` in the server directory.
+
+The mod uses the terminal provided by NeoForge. Interactive terminals support completion, highlighting, history navigation, and application-mode numpad digits. Redirected input and non-interactive server panels use plain command input; reaching the end of that input does not stop the server. In an interactive terminal, Ctrl+C or Ctrl+D requests a normal server shutdown.
+
+NeoForge's terminal overrides are respected: `-Dterminal.jline=false` disables interactive input, and `-Dterminal.ansi=false` disables colored output. A panel must provide a real terminal for interactive features to work.
+
+## Configuration
+
+The existing configuration file and settings are preserved:
+
+- `log-pattern`: Log4j console layout.
+- `highlight-colors`: argument colors in order.
+- `log-player-executed-commands`: whether to log player commands.
+
+Restart after changing these settings. `/better-neoforge-console` displays the installed version.
+
+## Building
+
+Run `./gradlew build` with Java 25. The installable Jar is written to `build/libs/`. CI builds the same artifact and runs the console integration checks.
+
+This port incorporates the upstream numpad fix (`c9d58f7`) and MinecraftServer system-message interception (`ebac8b4`), and adapts upstream terminal detection, Brigadier parsing, and tooltip coloring for NeoForge. It uses NeoForge's JLine runtime so the loader and mod share one terminal.
+
+Licensed under MIT; see [license.txt](license.txt). Original project by Jason Penilla.
