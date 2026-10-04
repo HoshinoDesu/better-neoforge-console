@@ -8,8 +8,8 @@ version = "1.3.0"
 group = "xyz.jpenilla"
 description = "Server-side NeoForge mod enhancing the console with tab completions, colored log output, command syntax highlighting, command history, and more."
 
-val minecraftVersion = "26.3"
-val neoForgeVersion = "26.3.0.48-beta"
+val minecraftVersion = "1.21.11"
+val neoForgeVersion = "21.11.45"
 val modId = "better_neoforge_console"
 
 neoForge {
@@ -32,7 +32,7 @@ neoForge {
 }
 
 java {
-  toolchain.languageVersion = JavaLanguageVersion.of(25)
+  toolchain.languageVersion = JavaLanguageVersion.of(21)
   withSourcesJar()
 }
 
@@ -80,8 +80,8 @@ tasks {
       "description" to project.description,
       "version" to project.version,
       "githubUrl" to "https://github.com/HoshinoDesu/better-neoforge-console",
-      "minecraftVersionRange" to "[$minecraftVersion,26.4)",
-      "neoForgeVersionRange" to "[$neoForgeVersion,26.4)"
+      "minecraftVersionRange" to "[$minecraftVersion,1.21.12)",
+      "neoForgeVersionRange" to "[$neoForgeVersion,21.12)"
     )
     inputs.properties(props)
     filesMatching("META-INF/neoforge.mods.toml") {
@@ -94,6 +94,6 @@ tasks {
   }
   withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
-    options.release = 25
+    options.release = 21
   }
 }

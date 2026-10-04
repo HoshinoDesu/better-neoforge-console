@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[12,)"
+loaderVersion = "[10,)"
 license = "MIT"
 issueTrackerURL = "${githubUrl}/issues"
 
@@ -8,7 +8,7 @@ modId = "${modId}"
 version = "${version}"
 displayName = "${name}"
 displayURL = "${githubUrl}"
-iconFile = "assets/better_neoforge_console/icon.png"
+logoFile = "assets/better_neoforge_console/icon.png"
 authors = "jmp"
 description = '''${description}'''
 
