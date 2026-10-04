@@ -2,14 +2,14 @@
   "required": true,
   "minVersion": "0.8",
   "package": "xyz.jpenilla.betterneoforgeconsole.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "mixins": [
   ],
   "client": [
   ],
   "server": [
     "DedicatedServerConsoleThreadMixin",
-    "DedicatedServerMixin",
+    "MinecraftServerMixin",
     "ServerGamePacketListenerImplMixin"
   ],
   "injectors": {

@@ -28,13 +28,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.console.HexFormattingConverter;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 import net.minecraft.ChatFormatting;
-import net.minecraft.DefaultUncaughtExceptionHandler;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
@@ -45,7 +42,9 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import org.apache.logging.log4j.core.config.plugins.processor.PluginEntry;
 import org.apache.logging.log4j.core.config.plugins.util.PluginRegistry;
 import org.apache.logging.log4j.core.config.plugins.util.PluginType;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -73,21 +72,15 @@ public final class BetterNeoForgeConsole {
   private static @MonotonicNonNull BetterNeoForgeConsole INSTANCE;
 
   private final Config config;
-  private final ConsoleState consoleState;
 
   public BetterNeoForgeConsole() {
     INSTANCE = this;
-    try {
-      loadPluginsFromClassLoader(HexFormattingConverter.class.getClassLoader());
-    } catch (final ReflectiveOperationException e) {
-      LOGGER.error("Failed to load extra Log4j2 plugins", e);
-    }
+    registerLogFormatting();
 
     this.config = this.loadModConfig();
     LOGGER.info("Initializing Better NeoForge Console...");
-    this.consoleState = ConsoleSetup.init(this.config);
     NeoForge.EVENT_BUS.addListener(this::registerCommands);
-    NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+    NeoForge.EVENT_BUS.addListener(this::onServerStarted);
   }
 
   private Config loadModConfig() {
@@ -108,17 +101,29 @@ public final class BetterNeoForgeConsole {
     }
   }
 
-  private void onServerStarting(final ServerStartingEvent event) {
-    this.initConsoleThread((DedicatedServer) event.getServer());
+  private void onServerStarted(final ServerStartedEvent event) {
+    if (event.getServer() instanceof DedicatedServer server) {
+      this.initConsoleThread(server);
+    }
   }
 
   private void initConsoleThread(final DedicatedServer server) {
-    this.consoleState.completer().delegateTo(new MinecraftCommandCompleter(server));
-    this.consoleState.highlighter().delegateTo(new MinecraftCommandHighlighter(server, this.config.highlightColors()));
-    this.consoleState.parser().delegateTo(new MinecraftConsoleParser(server));
-    final ConsoleThread consoleThread = new ConsoleThread(server, this.consoleState.lineReader());
+    final ConsoleState consoleState = ConsoleSetup.init(this.config);
+    consoleState.completer().delegateTo(new MinecraftCommandCompleter(server));
+    consoleState.highlighter().delegateTo(new MinecraftCommandHighlighter(server, this.config.highlightColors()));
+    consoleState.parser().delegateTo(new MinecraftConsoleParser(server));
+    final ConsoleThread consoleThread = new ConsoleThread(server, consoleState.lineReader());
     consoleThread.setDaemon(true);
-    consoleThread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
+    consoleThread.setUncaughtExceptionHandler((thread, error) -> LOGGER.error("Console thread failed", error));
+    NeoForge.EVENT_BUS.addListener((final ServerStoppedEvent event) -> {
+      if (consoleState.lineReader() != null) {
+        try {
+          consoleState.lineReader().getHistory().save();
+        } catch (final IOException ex) {
+          LOGGER.error("Failed to save console history", ex);
+        }
+      }
+    });
     consoleThread.start();
   }
 
@@ -146,25 +151,16 @@ public final class BetterNeoForgeConsole {
     return this.config;
   }
 
-  @SuppressWarnings("unchecked")
-  private static void loadPluginsFromClassLoader(final ClassLoader loader) throws ReflectiveOperationException {
-    final PluginRegistry registry = PluginRegistry.getInstance();
-    final Method decodeCacheFiles = PluginRegistry.class.getDeclaredMethod("decodeCacheFiles", ClassLoader.class);
-    decodeCacheFiles.setAccessible(true);
-    final Map<String, List<PluginType<?>>> newPlugins =
-      (Map<String, List<PluginType<?>>>) decodeCacheFiles.invoke(registry, loader);
-    final Map<String, List<PluginType<?>>> pluginsByCategory = registry.loadFromMainClassLoader();
-    newPlugins.forEach((category, discoveredPlugins) -> {
-      final List<PluginType<?>> forCategory = pluginsByCategory.computeIfAbsent(category, c -> discoveredPlugins);
-      if (forCategory == discoveredPlugins) {
-        return;
-      }
-      for (final PluginType<?> pluginType : discoveredPlugins) {
-        if (!forCategory.contains(pluginType)) {
-          forCategory.add(pluginType);
-        }
-      }
-    });
+  private static void registerLogFormatting() {
+    // Register after FML has created the mod class loader, not during Log4j bootstrap.
+    final PluginEntry entry = new PluginEntry();
+    entry.setKey("paperminecraftformatting");
+    entry.setName("paperMinecraftFormatting");
+    entry.setCategory("converter");
+    entry.setClassName(HexFormattingConverter.class.getName());
+    PluginRegistry.getInstance().loadFromMainClassLoader()
+      .computeIfAbsent("converter", category -> new ArrayList<>())
+      .add(new PluginType<>(entry, HexFormattingConverter.class, entry.getName()));
   }
 
   public static BetterNeoForgeConsole instance() {

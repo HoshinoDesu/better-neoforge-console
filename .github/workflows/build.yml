@@ -1,19 +1,26 @@
-name: "build"
+name: Build
 
 on:
   push:
-    branches: [ "**" ]
-    tags-ignore: [ "**" ]
   pull_request:
-  release:
-    types: [ released ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  call-build:
-    uses: "jpenilla/actions/.github/workflows/shared-ci.yml@master"
-    secrets: inherit
-    with:
-      modrinth-publish: true
-      artifacts-path: 'build/libs/better-neoforge-console-mc*.jar'
-      loom: false
-      jdk-version: 21
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew build --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: better-neoforge-console-mc26.3
+          path: build/libs/better-neoforge-console-mc26.3-*.jar
+          if-no-files-found: error

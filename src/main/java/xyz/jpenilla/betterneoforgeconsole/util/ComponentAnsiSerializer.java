@@ -23,13 +23,15 @@
  */
 package xyz.jpenilla.betterneoforgeconsole.util;
 
-import com.google.gson.JsonElement;
-import com.mojang.serialization.JsonOps;
+import java.util.Optional;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.ansi.ANSIComponentSerializer;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.ansi.ColorLevel;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.network.chat.Style;
+import net.minecrell.terminalconsole.TerminalConsoleAppender;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.framework.qual.DefaultQualifier;
 
@@ -38,15 +40,23 @@ public final class ComponentAnsiSerializer {
   private ComponentAnsiSerializer() {
   }
 
-  public static String serialize(final MinecraftServer server, final Component component) {
-    try {
-      final JsonElement json = ComponentSerialization.CODEC
-        .encodeStart(server.registryAccess().createSerializationContext(JsonOps.INSTANCE), component)
-        .getOrThrow();
-      return ANSIComponentSerializer.ansi().serialize(GsonComponentSerializer.gson().deserializeFromTree(json));
-    } catch (final Exception ex) {
-      // fall back to vanilla behavior if conversion fails for any reason
-      return component.getString();
-    }
+  public static String serialize(final Component component) {
+    final TextComponent.Builder text = net.kyori.adventure.text.Component.text();
+    // Visit resolved text so Minecraft translations and their arguments retain their styles.
+    component.visit((style, content) -> {
+      final TextComponent.Builder part = net.kyori.adventure.text.Component.text().content(content)
+        .decoration(TextDecoration.BOLD, style.isBold())
+        .decoration(TextDecoration.ITALIC, style.isItalic())
+        .decoration(TextDecoration.UNDERLINED, style.isUnderlined())
+        .decoration(TextDecoration.STRIKETHROUGH, style.isStrikethrough())
+        .decoration(TextDecoration.OBFUSCATED, style.isObfuscated());
+      if (style.getColor() != null) {
+        part.color(TextColor.color(style.getColor().getValue()));
+      }
+      text.append(part);
+      return Optional.empty();
+    }, Style.EMPTY);
+    final ColorLevel level = TerminalConsoleAppender.isAnsiSupported() ? ColorLevel.compute() : ColorLevel.NONE;
+    return ANSIComponentSerializer.builder().colorLevel(level).build().serialize(text.build());
   }
 }
